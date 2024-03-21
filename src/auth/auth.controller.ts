@@ -11,7 +11,7 @@ import {
 import { AuthService } from './auth.service';
 import { AuthDto, LoginDto } from './dto';
 import { ApiBody } from '@nestjs/swagger';
-import { JwtAuthGuard } from './jwt-auth.guard';
+// import { JwtAuthGuard } from './jwt-auth.guard';
 import { Public } from '../custom.decorator/custom.deco';
 
 @Controller('auth')
@@ -32,7 +32,7 @@ export class AuthController {
   }
 
   // TODO: for email confirmation,
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Post('signup/confirm/:userEmail')
   @ApiBody({ type: String })
   confirm(
@@ -44,7 +44,7 @@ export class AuthController {
 
   // TODO: for token reset,
   @Post('signout')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   signout(
     @Headers('authorization') token: string,
     @Headers('userId') userId: string,

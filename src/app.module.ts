@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './auth/jwt.strategy';
+// import { JwtStrategy } from './auth/jwt.strategy';
 import Redis from 'ioredis';
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -35,7 +35,7 @@ import { ConfigModule } from '@nestjs/config';
       },
       scope: Scope.DEFAULT,
     },
-    JwtStrategy,
+    // JwtStrategy,
   ],
 })
 export class AppModule {}

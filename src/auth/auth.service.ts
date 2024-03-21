@@ -68,6 +68,7 @@ export class AuthService {
   async signup(dto: AuthDto, response: any) {
     try {
       if (!dto.email || !dto.email.endsWith('@nitkkr.ac.in')) {
+        console.log('Invalid email format');
         throw new HttpException(
           {
             status: HttpStatus.BAD_REQUEST,
@@ -103,7 +104,7 @@ export class AuthService {
         verificationCode,
       );
 
-      await this.redisClient.set(token, verificationCode, 'EX', 60 * 5);
+      await this.redisClient.set(dto.email, verificationCode, 'EX', 60 * 10);
 
       const payload = {
         email: dto.email,
@@ -128,9 +129,12 @@ export class AuthService {
         return randomWord;
       };
 
-      const hashedrandomWord = bcrypt.hash(generateRandomWord(), 10);
-
-      this.prisma.user.create({
+      const hashedrandomWord: string = await bcrypt.hash(
+        generateRandomWord(),
+        10,
+      );
+      console.error(hashedrandomWord);
+      await this.prisma.user.create({
         data: {
           email: dto.email,
           passkey: hashedrandomWord,
@@ -143,6 +147,7 @@ export class AuthService {
         message: 'Verification code sent to email',
       };
     } catch (e) {
+      console.log(e);
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -157,6 +162,7 @@ export class AuthService {
   }
 
   async confirmEmail(userEmail: string, code: number) {
+    console.log(userEmail, code);
     try {
       const user = await this.prisma.user.findUnique({
         where: {
@@ -164,7 +170,9 @@ export class AuthService {
         },
       });
 
+      console.log(user);
       if (!user) {
+        console.log('userNotFound');
         throw new HttpException(
           {
             status: HttpStatus.NOT_FOUND,
@@ -180,6 +188,7 @@ export class AuthService {
       const verificationCode = await this.redisClient.get(userEmail);
 
       if (!verificationCode) {
+        console.log('no verification code');
         throw new HttpException(
           {
             status: HttpStatus.NOT_FOUND,
@@ -192,7 +201,8 @@ export class AuthService {
         );
       }
 
-      if (parseInt(verificationCode) !== code) {
+      if (parseInt(verificationCode) != code) {
+        console.log('didnt match verification code');
         throw new HttpException(
           {
             status: HttpStatus.UNAUTHORIZED,
@@ -205,7 +215,7 @@ export class AuthService {
         );
       }
 
-      this.prisma.user.update({
+      const userVerified = await this.prisma.user.update({
         where: {
           email: userEmail,
         },
@@ -217,6 +227,7 @@ export class AuthService {
       return {
         status: 201,
         message: 'Email confirmed',
+        passkey: user.passkey,
       };
     } catch (e) {
       throw new HttpException(
