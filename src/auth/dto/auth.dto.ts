@@ -6,21 +6,6 @@ export class AuthDto {
   @IsNotEmpty()
   @ApiProperty()
   email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  password: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  username: string;
 }
 
 export class LoginDto {
@@ -32,17 +17,5 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty()
-  password: string;
-}
-
-export class ResetPasswordDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  code: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty()
-  newPassword: string;
+  passkey: string;
 }

@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto, LoginDto, ResetPasswordDto } from './dto';
+import { AuthDto, LoginDto } from './dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import Redis from 'ioredis';
 import sendEmail from '../email/email';
@@ -65,16 +65,238 @@ export class AuthService {
     }
   }
 
-  signup(dto: AuthDto, response: any) {
-    return;
+  async signup(dto: AuthDto, response: any) {
+    try {
+      if (!dto.email || !dto.email.endsWith('@nitkkr.ac.in')) {
+        throw new HttpException(
+          {
+            status: HttpStatus.BAD_REQUEST,
+            error: 'Bad Request',
+          },
+          HttpStatus.BAD_REQUEST,
+          {
+            cause: 'Invalid email format',
+          },
+        );
+      }
+
+      const userAvailable = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
+
+      if (userAvailable) {
+        this.sendVerificationCode(dto.email, 'passKey', userAvailable.passkey);
+        return {
+          status: 200,
+          message: 'Welcome, Login with passkey emailed to you',
+        };
+      }
+
+      const verificationCode = this.generateVerificationCode();
+      const token = this.generateRandomToken();
+
+      this.sendVerificationCode(
+        dto.email,
+        'Verification Code',
+        verificationCode,
+      );
+
+      await this.redisClient.set(token, verificationCode, 'EX', 60 * 5);
+
+      const payload = {
+        email: dto.email,
+        token,
+      };
+
+      const authKey = await this.jwtService.sign(payload);
+
+      response.cookie('authKey', authKey, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year in milliseconds
+      });
+
+      const generateRandomWord = (): string => {
+        const characters =
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+        let randomWord = '';
+        for (let i = 0; i < 16; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          randomWord += characters[randomIndex];
+        }
+        return randomWord;
+      };
+
+      const hashedrandomWord = bcrypt.hash(generateRandomWord(), 10);
+
+      this.prisma.user.create({
+        data: {
+          email: dto.email,
+          passkey: hashedrandomWord,
+          userVerified: false,
+          role: 'USER',
+        },
+      });
+
+      return {
+        message: 'Verification code sent to email',
+      };
+    } catch (e) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Internal Server Error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: e,
+        },
+      );
+    }
   }
-  confirmEmail(userEmail: string, code: number) {
-    return;
+
+  async confirmEmail(userEmail: string, code: number) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: userEmail,
+        },
+      });
+
+      if (!user) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Not Found',
+          },
+          HttpStatus.NOT_FOUND,
+          {
+            cause: 'User not found',
+          },
+        );
+      }
+
+      const verificationCode = await this.redisClient.get(userEmail);
+
+      if (!verificationCode) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Code Not Found',
+          },
+          HttpStatus.NOT_FOUND,
+          {
+            cause: 'Verification code expired',
+          },
+        );
+      }
+
+      if (parseInt(verificationCode) !== code) {
+        throw new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            error: 'Wrong Code',
+          },
+          HttpStatus.UNAUTHORIZED,
+          {
+            cause: 'Invalid verification code',
+          },
+        );
+      }
+
+      this.prisma.user.update({
+        where: {
+          email: userEmail,
+        },
+        data: {
+          userVerified: true,
+        },
+      });
+
+      return {
+        status: 201,
+        message: 'Email confirmed',
+      };
+    } catch (e) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Internal Server Error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: e,
+        },
+      );
+    }
   }
+
   signOut(token: string, userId: string) {
     return;
   }
-  signin(dto: LoginDto, response: any) {
-    return;
+
+  async verifyUsingPasskey(dto: LoginDto, response: any) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
+
+      if (!user) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Not Found',
+          },
+          HttpStatus.NOT_FOUND,
+          {
+            cause: 'User not found',
+          },
+        );
+      }
+
+      const passwordMatch = bcrypt.compare(dto.passkey, user.passkey);
+
+      if (!passwordMatch) {
+        throw new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            error: 'Unauthorized',
+          },
+          HttpStatus.UNAUTHORIZED,
+          {
+            cause: 'Invalid password',
+          },
+        );
+      }
+
+      const payload = {
+        email: dto.email,
+      };
+
+      const authKey = this.jwtService.sign(payload);
+
+      response.cookie('authKey', authKey, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 365,
+      });
+
+      return {
+        message: 'Logged in',
+      };
+    } catch (e) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Internal Server Error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: e,
+        },
+      );
+    }
   }
 }

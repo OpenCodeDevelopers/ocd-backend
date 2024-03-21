@@ -8,6 +8,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
 import Redis from 'ioredis';
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PrismaModule } from './prisma/prisma.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.EXPIRES_IN },
     }),
+    ConfigModule,
   ],
   controllers: [AppController],
   providers: [

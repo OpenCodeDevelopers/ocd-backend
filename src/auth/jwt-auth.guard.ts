@@ -4,11 +4,11 @@ import { AuthGuard } from '@nestjs/passport';
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
-    // Add your custom logic to extract the access_token from the header
+    // Add your custom logic to extract the authKey from the header
     const request = context.switchToHttp().getRequest();
-    const accessToken = request.headers['access_token'];
+    const accessToken = request.headers['authKey'];
 
-    // Set the access_token in the request for passport-jwt to use
+    // Set the authKey in the request for passport-jwt to use
     if (accessToken) {
       request.headers.authorization = `${accessToken}`;
     }

@@ -7,12 +7,14 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [PrismaModule],
   controllers: [AuthController],
   providers: [
     AuthService,
+    ConfigService,
     {
       provide: 'REDIS',
       useFactory: () => {

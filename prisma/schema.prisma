@@ -15,15 +15,16 @@ datasource db {
 
 model User {
   id             String    @id @default(uuid())
-  name           String
+  name           String    @default("")
   email          String    @unique
-  branch         String
-  graduationYear String
-  photo          String
+  branch         String    @default("")
+  graduationYear Int       @default(dbgenerated("EXTRACT(YEAR FROM CURRENT_TIMESTAMP) + 4"))
+  passkey        String
+  photo          String?
   role           UserRoles
-  socialAccounts Socials   @relation(fields: [socialsId], references: [id])
+  socialAccounts Socials?  @relation(fields: [socialsId], references: [id])
   userVerified   Boolean
-  socialsId      String
+  socialsId      String?
 }
 
 enum UserRoles {
@@ -34,12 +35,11 @@ enum UserRoles {
 }
 
 model Socials {
-  id        String @id @default(uuid())
-  userId    String
-  facebook  String
-  instagram String
-  linkedin  String
-  github    String
-  twitter   String
+  id        String  @id @default(uuid())
+  facebook  String?
+  instagram String?
+  linkedin  String?
+  github    String?
+  twitter   String?
   User      User[]
 }
