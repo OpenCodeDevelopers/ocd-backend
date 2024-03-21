@@ -134,9 +134,11 @@ export class AuthService {
         10,
       );
       console.error(hashedrandomWord);
+
       await this.prisma.user.create({
         data: {
           email: dto.email,
+          token: token,
           passkey: hashedrandomWord,
           userVerified: false,
           role: 'USER',

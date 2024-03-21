@@ -21,6 +21,7 @@ model User {
   graduationYear Int       @default(dbgenerated("EXTRACT(YEAR FROM CURRENT_TIMESTAMP) + 4"))
   passkey        String
   photo          String?
+  token          String
   role           UserRoles
   socialAccounts Socials?  @relation(fields: [socialsId], references: [id])
   userVerified   Boolean

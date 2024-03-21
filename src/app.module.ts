@@ -9,6 +9,7 @@ import Redis from 'ioredis';
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
       signOptions: { expiresIn: process.env.EXPIRES_IN },
     }),
     ConfigModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
