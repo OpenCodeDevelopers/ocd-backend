@@ -58,7 +58,7 @@ jobs:
         fi
 
         for language in "${languages[@]}"; do
-            echo $language
+            echo "laguages=$languages" >> $GITHUB_OUTPUT
         done 
 
     # - name: Build project
