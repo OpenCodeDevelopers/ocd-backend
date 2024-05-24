@@ -29,6 +29,7 @@ jobs:
     #   run: npm install
 
     - name: Find languages
+      id: findLanguages
       run: |
         countTS=$(find ./ -type f -name '*.ts' | wc -l)
         countJS=$(find ./ -type f -name '*.js' | wc -l)
