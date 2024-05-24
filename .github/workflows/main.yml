@@ -8,7 +8,7 @@ on:
 
 jobs:
   analyze:
-    name: CodeQL Analysis
+    name: findLanguages
     runs-on: ubuntu-latest
       
     strategy:
